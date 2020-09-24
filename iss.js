@@ -49,6 +49,17 @@ const fetchCoordsByIP = function(ip, callback) {
   });
 };
 
+/**
+ * Makes a single API request to retrieve upcoming ISS fly over times the for the given lat/lng coordinates.
+ * Input:
+ *   - An object with keys `latitude` and `longitude`
+ *   - A callback (to pass back an error or the array of resulting data)
+ * Returns (via Callback):
+ *   - An error, if any (nullable)
+ *   - The fly over times as an array of objects (null if error). Example:
+ *     [ { risetime: 134564234, duration: 600 }, ... ]
+ */
+
 const fetchISSFlyOverTimes = function(coordinates, callback) {
   //use request to fetch fly over times for the ISS from NASA's JSON API
   request(`http://api.open-notify.org/iss-pass.json?lat=${coordinates.latitude}&lon=${coordinates.longitude}` , (error,response, body) => {
@@ -68,8 +79,45 @@ const fetchISSFlyOverTimes = function(coordinates, callback) {
 
   });
 };
-
-
 // http://api.open-notify.org/iss-pass.json?lat=49.83500&lon=-110.52030
 
-module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes };
+/**
+ * Orchestrates multiple API requests in order to determine the next 5 upcoming ISS fly overs for the user's current location.
+ * Input:
+ *   - A callback with an error or results.
+ * Returns (via Callback):
+ *   - An error, if any (nullable)
+ *   - The fly-over times as an array (null if error):
+ *     [ { risetime: <number>, duration: <number> }, ... ]
+ */
+const nextISSTimesForMyLocation = function(callback) {
+  fetchMyIP((error, ip) => {
+    if (error) {
+      console.log("It didn't work!");
+      return callback(error, null);
+    }
+    fetchCoordsByIP(ip, (error, data) => {
+      if (error) {
+        console.log("It didn't work!");
+        return callback(error, null);
+      }
+      fetchISSFlyOverTimes(data, (error, flyTimes) => {
+        if (error) {
+          console.log("It didn't work!");
+          return callback(error, null);
+        }
+        console.log(`Success here are the ISS Fly Over Times for your location: \n`);
+        for (const fly of flyTimes) {
+          const datetime = new Date(0);
+          datetime.setUTCSeconds(fly.risetime);
+          const duration = fly.duration;
+          console.log(`Next pass at ${datetime} for ${duration} seconds! \n`);
+          
+        }
+      });
+    });
+  });
+  
+};
+
+module.exports = { nextISSTimesForMyLocation }; // fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes,
