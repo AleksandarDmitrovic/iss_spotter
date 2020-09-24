@@ -49,5 +49,27 @@ const fetchCoordsByIP = function(ip, callback) {
   });
 };
 
+const fetchISSFlyOverTimes = function(coordinates, callback) {
+  //use request to fetch fly over times for the ISS from NASA's JSON API
+  request(`http://api.open-notify.org/iss-pass.json?lat=${coordinates.latitude}&lon=${coordinates.longitude}` , (error,response, body) => {
+    if (error) {
+      return callback(error, null);
+      
+    } else if (response.statusCode !== 200) {
+      const msg = `Status Code ${response.statusCode} when fetching fly over times for ISS: ${body}`;
+      callback(Error(msg), null);
+      return;
+    }
 
-module.exports = { fetchMyIP, fetchCoordsByIP };
+    const flyOverTimes = JSON.parse(body)['response'];
+    
+    callback(null, flyOverTimes);
+    
+
+  });
+};
+
+
+// http://api.open-notify.org/iss-pass.json?lat=49.83500&lon=-110.52030
+
+module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes };
